@@ -4,6 +4,7 @@
   "description": "Network health monitoring tool",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +19,8 @@
   "homepage": "https://github.com/indyhall/network-health-monitor#readme",
   "dependencies": {
     "ora": "^0.3.0",
-    "speedtest-net": "^1.2.7"
+    "speedtest-net": "^1.2.7",
+    "tcp-ping": "^0.1.1",
+    "traceroute-lite": "^0.1.0"
   }
 }
