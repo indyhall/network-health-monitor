@@ -1,10 +1,13 @@
 'use strict';
 
+require('dotenv').config();
+
 const dns = require('dns');
 const ora = require('ora');
 const speedtestnet = require('speedtest-net');
 const tcpp = require('tcp-ping');
 const Traceroute = require('traceroute-lite');
+const Octokat = require('octokat');
 
 const traceDomain = 'google.com';
 const pingSites = [
@@ -130,6 +133,26 @@ function reverseTrace(hops) {
 	});
 }
 
+function gist(health) {
+	// Optional gist
+	if (!process.env.GITHUB_TOKEN || !process.env.GIST_ID) {
+		return Promise.resolve(health);
+	}
+
+	const octo = new Octokat({ token: process.env.GITHUB_TOKEN });
+
+	return new Promise(resolve => {
+		const gist = octo.gists(process.env.GIST_ID);
+		resolve(gist.update({
+			'files': {
+				'stats.json': {
+					'content': JSON.stringify(health, null, 2)
+				}
+			}
+		}));
+	});
+}
+
 const health = {};
 
 speedtest()
@@ -147,39 +170,10 @@ speedtest()
 	.then(data => {
 		health.traceroute = data;
 	})
+	.then(() => gist(health))
 	.then(() => {
 		spinner.stop();
 		console.log(JSON.stringify(health, null, 4));
 		process.exit(0);
 	})
 	.catch(err => console.error(err));
-
-
-/*
- { speeds:
- { download: 79.827,
- upload: 59.137,
- originalDownload: 8791517,
- originalUpload: 6489988 },
- client:
- { ip: '68.83.136.192',
- lat: 39.953,
- lon: -75.1756,
- isp: 'XFINITY',
- isprating: 2.8,
- rating: 0,
- ispdlavg: 27.61,
- ispulavg: 5.952 },
- server:
- { host: 'web01.quonix.net',
- lat: 39.95,
- lon: -75.1667,
- location: 'Philadelphia, PA',
- country: 'United States',
- cc: 'US',
- sponsor: 'Quonix, Inc.',
- distance: 0.83,
- distanceMi: 0.51,
- ping: 16.3,
- id: '7519' } }
- */
