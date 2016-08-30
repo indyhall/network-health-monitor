@@ -9,14 +9,39 @@ const tcpp = require('tcp-ping');
 const Traceroute = require('traceroute-lite');
 const Cachet = require('cachet-api');
 const objectPath = require('object-path');
+const Latenz = require('latenz');
+
+const argv = require('minimist')(process.argv.slice(2));
+const DEBUG = (argv.debug && true === argv.debug);
+if (DEBUG) {
+	console.log('Running in debug mode.');
+}
 
 const config = require('./config.json');
 const spinner = ora('Loading').start();
 
+function latency() {
+	const l = new Latenz();
+	spinner.text = 'Measuring latency...';
+	return l.measure(config.latency.domain).then(data => {
+
+		const total = data.reduce((sum, row) => sum + row.time, 0);
+		data.push({
+			key: 'total',
+			time: total
+		});
+
+		spinner.text = 'Done measuring latency.';
+		return data;
+	});
+}
+
 function speedtest() {
 	return new Promise((resolve, reject) => {
 		spinner.text = 'Starting speed test.';
-		const test = speedtestnet();
+		const test = speedtestnet({
+			maxTime: (DEBUG ? 1000 : 20000)
+		});
 
 		test.on('testserver', server => spinner.text = `Using server "${server.name}"`);
 		test.on('downloadprogress', progress => spinner.text = `Download progress: ${progress}%`);
@@ -104,6 +129,11 @@ function reverseTrace(hops) {
 		const results = hops.map((hop, idx) => {
 			hop.hostname = hop.ip;
 
+			if (!hop.ip) {
+				count++;
+				return hop;
+			}
+
 			dns.reverse(hop.ip, (err, hostnames) => {
 				count++;
 
@@ -111,14 +141,20 @@ function reverseTrace(hops) {
 					results[idx].hostname = hostnames[0];
 					spinner.text = `Resolved ${hop.ip} to ${hostnames[0]}`;
 				}
-
-				if (count >= hops.length) {
-					resolve(results);
-				}
 			});
 
 			return hop;
 		});
+
+		const waiting = setInterval(() => {
+			if (count >= hops.length) {
+				clearInterval(waiting);
+				spinner.text = 'Done resolving hostnames.';
+				resolve(results);
+			}
+		}, 100);
+
+
 	});
 }
 
@@ -146,6 +182,11 @@ function cachet(health) {
 				return;
 			}
 
+			if (DEBUG) {
+				report.push(`[debug] Would set metric #${id} (${path}) to ${value}`);
+				return;
+			}
+
 			operations++;
 			api.publishMetricPoint({id, value}).then(() => {
 				report.push(`Set metric #${id} (${path}) to ${value}`);
@@ -155,13 +196,23 @@ function cachet(health) {
 
 		metric('speed.up_id', health.uploadSpeed);
 		metric('speed.down_id', health.downloadSpeed);
-		metric('trace.cachet_id', health.traceroute.length);
+		metric('trace.hops_id', health.traceroute.length);
+		metric('trace.dropped_id', health.tracerouteDropped);
 
 		config.pings.forEach((row, idx) => {
 			const domain = row.domain;
 			if (health.pings[domain]) {
 				metric(`pings.${idx}.cachet_id`, health.pings[domain]);
 			}
+		});
+
+		Object.keys(config.latency).forEach(id => {
+			if (!/_id$/.test(id)) {
+				return;
+			}
+
+			const key = id.replace(/_id$/, '');
+			metric(`latency.${id}`, health.latency[key]);
 		});
 
 		const waiting = setInterval(() => {
@@ -182,6 +233,12 @@ speedtest()
 		health.downloadSpeed = data.speeds.download;
 		health.uploadSpeed = data.speeds.upload;
 	})
+	.then(() => latency())
+	.then(data => {
+		const latencyMap = {};
+		data.forEach(row => latencyMap[row.key] = row.time);
+		health.latency = latencyMap;
+	})
 	.then(() => ping())
 	.then(data => {
 		const pingMap = {};
@@ -192,6 +249,7 @@ speedtest()
 	.then(data => reverseTrace(data))
 	.then(data => {
 		health.traceroute = data;
+		health.tracerouteDropped = data.reduce((sum, row) => sum + (row.ip ? 0 : 1), 0);
 	})
 	.then(() => cachet(health))
 	.then(cachetReport => {

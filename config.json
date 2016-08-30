@@ -3,9 +3,19 @@
     "up_id": 1,
     "down_id": 2
   },
+  "latency": {
+    "domain": "google.com",
+    "resolve_id": null,
+    "socket_id": null,
+    "response_id": null,
+    "firstdata_id": null,
+    "end_id": null,
+    "total_id": 6
+  },
   "trace": {
     "domain": "google.com",
-    "cachet_id": 5
+    "hops_id": 5,
+    "dropped_id": 7
   },
   "pings": [
     {

@@ -20,6 +20,8 @@
   "dependencies": {
     "cachet-api": "^1.0.3",
     "dotenv": "^2.0.0",
+    "latenz": "^0.2.4",
+    "minimist": "^1.2.0",
     "object-path": "^0.11.1",
     "ora": "^0.3.0",
     "speedtest-net": "^1.2.7",
