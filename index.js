@@ -187,6 +187,12 @@ function cachet(health) {
 				return;
 			}
 
+			if (!value) {
+				const prettyValue = JSON.stringify(value);
+				report.push(`Skipping metric #${id} (${path}) because value is ${prettyValue}`);
+				return;
+			}
+
 			operations++;
 			api.publishMetricPoint({id, value}).then(() => {
 				report.push(`Set metric #${id} (${path}) to ${value}`);
