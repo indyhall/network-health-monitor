@@ -16,9 +16,7 @@ const spinner = ora('Loading').start();
 function speedtest() {
 	return new Promise((resolve, reject) => {
 		spinner.text = 'Starting speed test.';
-		const test = speedtestnet({
-			maxTime: 1000 // FIXME
-		});
+		const test = speedtestnet();
 
 		test.on('testserver', server => spinner.text = `Using server "${server.name}"`);
 		test.on('downloadprogress', progress => spinner.text = `Download progress: ${progress}%`);
@@ -140,6 +138,7 @@ function cachet(health) {
 		});
 
 		var operations = 0;
+		var report = [];
 
 		function metric(path, value) {
 			const id = objectPath.get(config, path);
@@ -148,7 +147,10 @@ function cachet(health) {
 			}
 
 			operations++;
-			api.publishMetricPoint({id, value}).then(() => operations--);
+			api.publishMetricPoint({id, value}).then(() => {
+				report.push(`Set metric #${id} (${path}) to ${value}`);
+				operations--;
+			});
 		}
 
 		metric('speed.up_id', health.uploadSpeed);
@@ -166,7 +168,7 @@ function cachet(health) {
 			if (!operations) {
 				clearInterval(waiting);
 				spinner.text = 'Done sending to Cachet.';
-				resolve();
+				resolve(report);
 			}
 		}, 100);
 	});
@@ -192,10 +194,12 @@ speedtest()
 		health.traceroute = data;
 	})
 	.then(() => cachet(health))
-	.then(() => {
+	.then(cachetReport => {
 		spinner.stop();
 		console.log('--- Results ---');
 		console.log(JSON.stringify(health, null, 4));
+		console.log('--- Cachet Report ---');
+		cachetReport.forEach(line => console.log(line));
 		process.exit(0);
 	})
 	.catch(err => console.error(err));
