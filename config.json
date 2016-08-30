@@ -14,7 +14,7 @@
   },
   "trace": {
     "domain": "google.com",
-    "hops_id": 5,
+    "hops_id": null,
     "dropped_id": 7
   },
   "pings": [
