@@ -7,21 +7,10 @@ const ora = require('ora');
 const speedtestnet = require('speedtest-net');
 const tcpp = require('tcp-ping');
 const Traceroute = require('traceroute-lite');
-const Octokat = require('octokat');
+const Cachet = require('cachet-api');
+const objectPath = require('object-path');
 
-const traceDomain = 'google.com';
-const pingSites = [
-	'google.com',
-	'facebook.com',
-	'baidu.com',
-	'yahoo.com',
-	'amazon.com',
-	'wikipedia.org',
-	'yandex.ru',
-	'fc2.com',
-	'diply.com'
-];
-
+const config = require('./config.json');
 const spinner = ora('Loading').start();
 
 function speedtest() {
@@ -47,12 +36,14 @@ function ping() {
 	return new Promise(resolve => {
 		spinner.text = 'Starting ping tests.';
 
+		const pingDomains = config.pings.map(row => row.domain);
 		const results = [];
-		for (let address of pingSites) {
+
+		for (let address of pingDomains) {
 			tcpp.ping({address}, (err, data) => {
 				const row = {
 					address,
-					result: err ? 'Error' : `${data.avg}ms`
+					result: err ? null : data.avg
 				};
 				results.push(row);
 				spinner.text = `${address} ping: ${row.result}`;
@@ -60,7 +51,7 @@ function ping() {
 		}
 		
 		const waiting = setInterval(() => {
-			if (results.length === pingSites.length) {
+			if (results.length === pingDomains.length) {
 				clearInterval(waiting);
 				spinner.text = 'All ping tests complete.';
 				resolve(results);
@@ -74,7 +65,7 @@ function trace() {
 		spinner.text = 'Starting traceroute...';
 
 		const partial = [];
-		const trace = new Traceroute(traceDomain);
+		const trace = new Traceroute(config.trace.domain);
 
 		const timeout = setTimeout(() => {
 			spinner.text = 'Traceroute timed out.';
@@ -133,23 +124,51 @@ function reverseTrace(hops) {
 	});
 }
 
-function gist(health) {
-	// Optional gist
-	if (!process.env.GITHUB_TOKEN || !process.env.GIST_ID) {
+function cachet(health) {
+	// Optionally push metrics to Cachet
+	if (!process.env.CACHET_KEY || !process.env.CACHET_URL) {
 		return Promise.resolve(health);
 	}
 
-	const octo = new Octokat({ token: process.env.GITHUB_TOKEN });
-
 	return new Promise(resolve => {
-		const gist = octo.gists(process.env.GIST_ID);
-		resolve(gist.update({
-			'files': {
-				'stats.json': {
-					'content': JSON.stringify(health, null, 2)
-				}
+		spinner.text = 'Sending data to Cachet server...';
+
+		const {CACHET_KEY, CACHET_URL} = process.env;
+		const api = new Cachet({
+			url: CACHET_URL,
+			apiKey: CACHET_KEY
+		});
+
+		var operations = 0;
+
+		function metric(path, value) {
+			const id = objectPath.get(config, path);
+			if (!id) {
+				return;
 			}
-		}));
+
+			operations++;
+			api.publishMetricPoint({id, value}).then(() => operations--);
+		}
+
+		metric('speed.up_id', health.uploadSpeed);
+		metric('speed.down_id', health.downloadSpeed);
+		metric('trace.cachet_id', health.traceroute.length);
+
+		config.pings.forEach((row, idx) => {
+			const domain = row.domain;
+			if (health.pings[domain]) {
+				metric(`pings.${idx}.cachet_id`, health.pings[domain]);
+			}
+		});
+
+		const waiting = setInterval(() => {
+			if (!operations) {
+				clearInterval(waiting);
+				spinner.text = 'Done sending to Cachet.';
+				resolve();
+			}
+		}, 100);
 	});
 }
 
@@ -163,16 +182,19 @@ speedtest()
 	})
 	.then(() => ping())
 	.then(data => {
-		health.pings = data;
+		const pingMap = {};
+		data.forEach(row => pingMap[row.address] = row.result);
+		health.pings = pingMap;
 	})
 	.then(() => trace())
 	.then(data => reverseTrace(data))
 	.then(data => {
 		health.traceroute = data;
 	})
-	.then(() => gist(health))
+	.then(() => cachet(health))
 	.then(() => {
 		spinner.stop();
+		console.log('--- Results ---');
 		console.log(JSON.stringify(health, null, 4));
 		process.exit(0);
 	})

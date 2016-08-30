@@ -1,0 +1,48 @@
+{
+  "speed": {
+    "up_id": null,
+    "down_id": null
+  },
+  "trace": {
+    "domain": "google.com",
+    "cachet_id": null
+  },
+  "pings": [
+    {
+      "domain": "google.com",
+      "cachet_id": null
+    },
+    {
+      "domain": "facebook.com",
+      "cachet_id": null
+    },
+    {
+      "domain": "baidu.com",
+      "cachet_id": null
+    },
+    {
+      "domain": "yahoo.com",
+      "cachet_id": null
+    },
+    {
+      "domain": "amazon.com",
+      "cachet_id": null
+    },
+    {
+      "domain": "wikipedia.org",
+      "cachet_id": null
+    },
+    {
+      "domain": "yandex.ru",
+      "cachet_id": null
+    },
+    {
+      "domain": "fc2.com",
+      "cachet_id": null
+    },
+    {
+      "domain": "diply.com",
+      "cachet_id": null
+    }
+  ]
+}
