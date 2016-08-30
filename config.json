@@ -1,16 +1,16 @@
 {
   "speed": {
-    "up_id": null,
-    "down_id": null
+    "up_id": 1,
+    "down_id": 2
   },
   "trace": {
     "domain": "google.com",
-    "cachet_id": null
+    "cachet_id": 5
   },
   "pings": [
     {
       "domain": "google.com",
-      "cachet_id": null
+      "cachet_id": 3
     },
     {
       "domain": "facebook.com",
@@ -30,7 +30,7 @@
     },
     {
       "domain": "wikipedia.org",
-      "cachet_id": null
+      "cachet_id": 4
     },
     {
       "domain": "yandex.ru",
