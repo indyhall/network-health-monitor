@@ -40,7 +40,7 @@ function speedtest() {
 	return new Promise((resolve, reject) => {
 		spinner.text = 'Starting speed test.';
 		const test = speedtestnet({
-			maxTime: (DEBUG ? 1000 : 20000)
+			maxTime: (DEBUG ? 1000 : 30000)
 		});
 
 		test.on('testserver', server => spinner.text = `Using server "${server.name}"`);
