@@ -10,6 +10,7 @@ const Traceroute = require('traceroute-lite');
 const Cachet = require('cachet-api');
 const objectPath = require('object-path');
 const Latenz = require('latenz');
+const networkUnifi = require('network-unifi');
 
 const argv = require('minimist')(process.argv.slice(2));
 const DEBUG = (argv.debug && true === argv.debug);
@@ -19,6 +20,21 @@ if (DEBUG) {
 
 const config = require('./config.json');
 const spinner = ora('Loading').start();
+
+function unifiClients() {
+	const options = {
+		username: process.env.UNIFI_USER,
+		password: process.env.UNIFI_PASS,
+		port: 8443,
+		url: process.env.UNIFI_HOST,
+		site: 'default',
+		ignoreSsl: true
+	};
+	
+	return networkUnifi(options)
+		.then(router => router.getClients())
+		.then(clients => clients.length);
+}
 
 function latency() {
 	const l = new Latenz();
@@ -204,6 +220,7 @@ function cachet(health) {
 		metric('speed.down_id', health.downloadSpeed);
 		metric('trace.hops_id', health.traceroute.length);
 		metric('trace.dropped_id', health.tracerouteDropped);
+		metric('unifi.client_count_id', health.clientCount);
 
 		config.pings.forEach((row, idx) => {
 			const domain = row.domain;
@@ -257,6 +274,8 @@ speedtest()
 		health.traceroute = data;
 		health.tracerouteDropped = data.reduce((sum, row) => sum + (row.ip ? 0 : 1), 0);
 	})
+	.then(() => unifiClients())
+	.then(clientCount => health.clientCount = clientCount)
 	.then(() => cachet(health))
 	.then(cachetReport => {
 		spinner.stop();

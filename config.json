@@ -17,6 +17,9 @@
     "hops_id": null,
     "dropped_id": 7
   },
+  "unifi": {
+    "client_count_id": 8
+  },
   "pings": [
     {
       "domain": "google.com",
@@ -24,10 +27,6 @@
     },
     {
       "domain": "facebook.com",
-      "cachet_id": null
-    },
-    {
-      "domain": "baidu.com",
       "cachet_id": null
     },
     {
