@@ -17,6 +17,9 @@
     "url": "https://github.com/indyhall/network-health-monitor/issues"
   },
   "homepage": "https://github.com/indyhall/network-health-monitor#readme",
+  "engines": {
+    "node": ">=6.0.0"
+  },
   "dependencies": {
     "cachet-api": "^1.0.3",
     "listr": "^0.6.1",
