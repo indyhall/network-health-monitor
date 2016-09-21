@@ -73,7 +73,7 @@ const speedTask = {
 
 const unifiTask = {
 	title: 'Unifi',
-	task: () => speed(results, config.services.unifi),
+	task: () => unifi(results, config.services.unifi),
 	skip: () => {
 		if (!config.services.unifi) {
 			return 'No Unifi configuration';
