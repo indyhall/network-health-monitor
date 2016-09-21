@@ -1,0 +1,73 @@
+{
+  "services": {
+    "cachet": {
+      "url": "https://demo.cachethq.io",
+      "apiKey": ""
+    },
+    "unifi-disabled": {
+      "host": "https://192.168.0.1",
+      "username": "",
+      "password": ""
+    }
+  },
+  "logging": {
+    "filename": "results.log",
+    "mode": "w"
+  },
+  "tests": {
+    "speed": {
+      "time_limit": 30,
+      "up_id": null,
+      "down_id": null
+    },
+    "latency": {
+      "domain": "google.com",
+      "dns_id": null,
+      "connect_id": null,
+      "response_id": null
+    },
+    "trace": {
+      "domain": "google.com",
+      "timeout": 60,
+      "hops_id": null,
+      "dropped_id": null
+    },
+    "unifi": {
+      "client_count_id": null
+    },
+    "ping": [
+      {
+        "domain": "google.com",
+        "cachet_id": null
+      },
+      {
+        "domain": "facebook.com",
+        "cachet_id": null
+      },
+      {
+        "domain": "yahoo.com",
+        "cachet_id": null
+      },
+      {
+        "domain": "amazon.com",
+        "cachet_id": null
+      },
+      {
+        "domain": "wikipedia.org",
+        "cachet_id": null
+      },
+      {
+        "domain": "yandex.ru",
+        "cachet_id": null
+      },
+      {
+        "domain": "fc2.com",
+        "cachet_id": null
+      },
+      {
+        "domain": "diply.com",
+        "cachet_id": null
+      }
+    ]
+  }
+}
