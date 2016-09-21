@@ -4,6 +4,10 @@ const dns = require('dns');
 const http = require('http');
 const Observable = require('rxjs/Rx').Observable;
 
+function hr2ms(tuple) {
+	return (tuple[0] * 1000) + Math.round(tuple[1] / 1000000);
+}
+
 module.exports = function(results, options) {
 	const {domain} = options;
 	const times = {
@@ -34,14 +38,14 @@ module.exports = function(results, options) {
 				res.on('end', () => {
 					times.response = process.hrtime(times.start);
 					
-					var total = (times.response[0] * 1000) + Math.round(times.response[1] / 1000000);
+					var total = hr2ms(times.response);
 					
 					observer.next(`Measured ${total}ms latency to ${domain}.`);
 					
 					results.latency = {
-						dns: (times.dns[0] * 1000) + Math.round(times.dns[1] / 1000000),
-						connect: (times.connect[0] * 1000) + Math.round(times.connect[1] / 1000000),
-						response: (times.response[0] * 1000) + Math.round(times.response[1] / 1000000)
+						dns: hr2ms(times.dns),
+						connect: hr2ms(times.connect),
+						response: hr2ms(times.response)
 					};
 					observer.complete();
 				});
